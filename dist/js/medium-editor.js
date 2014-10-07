@@ -277,7 +277,8 @@ if (typeof module === 'object') {
             this.elements[index].addEventListener('keyup', function (e) {
                 var node = getSelectionStart(),
                     tagName;
-                if (node && node.getAttribute('data-medium-element') && node.children.length === 0 && !(self.options.disableReturn || node.getAttribute('data-disable-return'))) {
+                if (node && node.getAttribute('data-medium-element') && node.children.length === 0 && !(self.options.disableReturn || node.getAttribute('data-disable-return')
+                    && self.options.forcePlainText)) {
                     document.execCommand('formatBlock', false, 'p');
                 }
                 if (e.which === 13) {

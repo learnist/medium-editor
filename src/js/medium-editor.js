@@ -1,5 +1,3 @@
-/*global module, console*/
-
 function MediumEditor(elements, options) {
     'use strict';
     return this.init(elements, options);
@@ -279,9 +277,9 @@ if (typeof module === 'object') {
             this.elements[index].addEventListener('keyup', function (e) {
                 var node = getSelectionStart(),
                     tagName;
-                if (node && node.getAttribute('data-medium-element') && node.children.length === 0 && !(self.options.disableReturn || node.getAttribute('data-disable-return')
-                    && self.options.forcePlainText)) {
-                    document.execCommand('formatBlock', false, 'p');
+                if (node && node.getAttribute('data-medium-element') && node.children.length === 0 && !(self.options.disableReturn || node.getAttribute('data-disable-return'))) {
+                    if(!self.options.forcePlainText)
+                        document.execCommand('formatBlock', false, 'p');
                 }
                 if (e.which === 13) {
                     node = getSelectionStart();
@@ -628,31 +626,36 @@ if (typeof module === 'object') {
         },
 
         findMatchingSelectionParent: function(testElementFunction) {
-            var selection = window.getSelection(), range, current;
+            var selection = window.getSelection(),
+                range, current, parent,
+                result,
+                getElement = function (e) {
+                    var localParent = e;
+                    try {
+                        while (!testElementFunction(localParent)) {
+                            localParent = localParent.parentNode;
+                        }
+                    } catch (errb) {
+                        return false;
+                    }
+                    return localParent;
+                };
+            // First try on current node
+            try {
+                range = selection.getRangeAt(0);
+                current = range.commonAncestorContainer;
+                parent = current.parentNode;
 
-            if (selection.rangeCount === 0) {
-                return false;
+                if (testElementFunction(current)) {
+                    result = current;
+                } else {
+                    result = getElement(parent);
+                }
+                // If not search in the parent nodes.
+            } catch (err) {
+                result = getElement(parent);
             }
-
-            range = selection.getRangeAt(0);
-            current = range.commonAncestorContainer;
-
-            do {
-              if (current.nodeType === 1){
-                if ( testElementFunction(current) )
-                {
-                    return current;
-                }
-                // do not traverse upwards past the nearest containing editor
-                if (current.getAttribute('data-medium-element')) {
-                    return false;
-                }
-              }
-
-              current = current.parentNode;
-            } while (current);
-
-            return false;
+            return result;
         },
 
         getSelectionElement: function () {
@@ -1171,10 +1174,12 @@ if (typeof module === 'object') {
                 i;
             if (el.tagName.toLowerCase() === 'a') {
                 el.target = '_blank';
+                el.rel = 'nofollow';
             } else {
                 el = el.getElementsByTagName('a');
                 for (i = 0; i < el.length; i += 1) {
                     el[i].target = '_blank';
+                    el[i].rel = 'nofollow';
                 }
             }
         },
